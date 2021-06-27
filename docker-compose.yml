@@ -19,7 +19,7 @@ services:
       - ROOT_URL=https://chat.kikkirej.net
       - MONGO_URL=mongodb://mongo:27017/rocketchat
       - MONGO_OPLOG_URL=mongodb://mongo:27017/local
-      - MAIL_URL=smtp://smtp.email
+      # - MAIL_URL=smtp://smtp.email
     depends_on:
       - mongo
     ports:
@@ -27,14 +27,17 @@ services:
     labels:
       - server.user=${TRAEFIK_IDENT}
       - traefik.enable=true
-      - traefik.http.routers.ts3-manager.rule=Host(`ts3.kikkirej.net`)
-      - traefik.http.routers.ts3-manager.entrypoints=websecure
+      - "traefik.http.routers.rocketchat.rule=Host(`chat.kikkirej.net`) || Host(`rocketchat.kikkirej.net`)"
+      - traefik.http.routers.rocketchat.entrypoints=websecure
+    networks: 
+      - reverse-proxy
+      - default
 
   mongo:
     image: mongo:4.0
     restart: unless-stopped
     volumes:
-     - ./data/db:/data/db
+     - data_db:/data/db
      #- ./data/dump:/dump
     command: mongod --smallfiles --oplogSize 128 --replSet rs0 --storageEngine=mmapv1
 
@@ -77,3 +80,9 @@ services:
  
 volumes:
   uploads:
+  data_db:
+
+networks:
+  reverse-proxy:
+    external: true
+    name: ${LOADBALANCER_NAME}_reverse-proxy
